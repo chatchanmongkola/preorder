@@ -11,7 +11,6 @@ export default function Login() {
     const { setToken, isAuthenticated } = useAuth();
     const navigate = useNavigate();
     const [liffReady, setLiffReady] = useState(false);
-    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         if (isAuthenticated) {
@@ -52,7 +51,6 @@ export default function Login() {
                     เข้าสู่ระบบด้วย LINE เพื่อเริ่มสั่งของ
                 </CardDescription>
 
-                {error && <p className="mt-4 text-sm text-red-500">{error}</p>}
 
                 {liffReady && (
                     <Button className="mt-6 w-full" onClick={handleLiffLogin}>
