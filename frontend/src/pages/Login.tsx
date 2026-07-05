@@ -51,7 +51,6 @@ export default function Login() {
                     เข้าสู่ระบบด้วย LINE เพื่อเริ่มสั่งของ
                 </CardDescription>
 
-
                 {liffReady && (
                     <Button className="mt-6 w-full" onClick={handleLiffLogin}>
                         เข้าสู่ระบบด้วย LINE
