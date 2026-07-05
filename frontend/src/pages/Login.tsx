@@ -30,14 +30,16 @@ export default function Login() {
       .init({ liffId })
       .then(() => {
         setLiffReady(true);
-        if (liff.isLoggedIn()) {
-          setLiffLoggedIn(true);
+        const loggedIn = liff.isLoggedIn();
+        setLiffLoggedIn(loggedIn);
+        
+        if (loggedIn) {
           const idToken = liff.getIDToken();
           if (idToken) {
             liffLogin(idToken)
               .then((token) => {
                 setToken(token);
-                navigate("/", { replace: true });
+                navigate("/orders", { replace: true });
               })
               .catch((err) => setError(err instanceof Error ? err.message : "LIFF login failed"));
           } else {
@@ -77,7 +79,7 @@ export default function Login() {
         )}
 
         {liffReady && liffLoggedIn && (
-          <p className="mt-6 text-sm text-neutral-500">กำลังเชื่อมต่อกับ LINE...</p>
+          <p className="mt-6 text-sm text-neutral-500">กำลังเข้าสู่ระบบด้วย LINE...</p>
         )}
 
         {!liffReady && import.meta.env.DEV && (
