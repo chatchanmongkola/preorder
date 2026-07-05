@@ -1,5 +1,6 @@
 import { useParams } from "react-router-dom";
 
+import BackButton from "../components/BackButton";
 import { Card, CardDescription, CardTitle } from "../components/ui/card";
 import { useRoundSummary } from "../hooks/useRounds";
 
@@ -12,7 +13,10 @@ export default function Summary() {
 
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col gap-4 p-6">
-      <h1 className="text-2xl font-bold text-primary">สรุปยอด {summary.round_name}</h1>
+      <div className="flex items-center gap-2">
+        <BackButton />
+        <h1 className="text-2xl font-bold text-primary">สรุปยอด {summary.round_name}</h1>
+      </div>
       <CardDescription>สถานะ: {summary.status}</CardDescription>
 
       <div className="flex flex-col gap-2">

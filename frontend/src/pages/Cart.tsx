@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
+import BackButton from "../components/BackButton";
 import { Button } from "../components/ui/button";
 import { Card, CardTitle } from "../components/ui/card";
 import { useCart } from "../context/CartContext";
@@ -45,7 +46,10 @@ export default function Cart() {
 
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col gap-4 p-6 pb-28">
-      <h1 className="text-2xl font-bold text-primary">ตะกร้าของฉัน</h1>
+      <div className="flex items-center gap-2">
+        <BackButton />
+        <h1 className="text-2xl font-bold text-primary">ตะกร้าของฉัน</h1>
+      </div>
 
       {existingOrder && (
         <p className="rounded-2xl bg-orange-50 p-3 text-sm text-orange-700">

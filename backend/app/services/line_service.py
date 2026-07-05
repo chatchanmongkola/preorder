@@ -37,6 +37,12 @@ async def exchange_code_for_profile(code: str, redirect_uri: str) -> dict:
         if not id_token:
             raise LineAuthError("LINE token response missing id_token")
 
+        return await verify_id_token(id_token)
+
+
+async def verify_id_token(id_token: str) -> dict:
+    """Verify an id_token directly via LINE's verify endpoint and return the profile payload."""
+    async with httpx.AsyncClient(timeout=10) as client:
         verify_res = await client.post(
             LINE_VERIFY_URL,
             data={"id_token": id_token, "client_id": settings.LINE_CLIENT_ID},

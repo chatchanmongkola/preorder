@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.models import MenuItem, Order, OrderStatus, Round, RoundStatus
 from app.services import telegram_service
-from app.services.round_service import build_round_summary, get_effective_status
+from app.services.round_service import auto_complete_expired_rounds, build_round_summary, get_effective_status
 
 
 def _cmd_status(db: Session) -> str:
@@ -44,10 +44,15 @@ def _cmd_open(db: Session, args: list[str]) -> str:
 
 
 def _find_latest_active_round(db: Session) -> Round | None:
-    return db.query(Round).filter(Round.status != RoundStatus.CLOSED).order_by(Round.opens_at.desc()).first()
+    rounds = db.query(Round).filter(Round.status != RoundStatus.CLOSED).order_by(Round.opens_at.desc()).all()
+    for r in rounds:
+        if get_effective_status(r) == RoundStatus.OPEN:
+            return r
+    return None
 
 
 async def _cmd_close(db: Session) -> str:
+    auto_complete_expired_rounds(db)
     round_ = _find_latest_active_round(db)
     if round_ is None:
         return "ไม่มีรอบที่เปิดอยู่ให้ปิด"

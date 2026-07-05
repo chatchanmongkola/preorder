@@ -1,8 +1,11 @@
+import logging
+
 import httpx
 
 from app.core.config import get_settings
 from app.schemas.round import RoundSummaryOut
 
+logger = logging.getLogger(__name__)
 settings = get_settings()
 
 TELEGRAM_API_BASE = "https://api.telegram.org"
@@ -20,7 +23,15 @@ async def send_message(text: str, chat_id: str | None = None) -> None:
 
     url = f"{TELEGRAM_API_BASE}/bot{settings.TELEGRAM_BOT_TOKEN}/sendMessage"
     async with httpx.AsyncClient(timeout=10) as client:
-        await client.post(url, json={"chat_id": target_chat_id, "text": text})
+        resp = await client.post(url, json={"chat_id": target_chat_id, "text": text})
+        if not resp.is_success:
+            logger.error(
+                "Telegram sendMessage failed: %s %s — chat_id=%s text=%.100s",
+                resp.status_code,
+                resp.text,
+                target_chat_id,
+                text,
+            )
 
 
 def format_round_summary(summary: RoundSummaryOut) -> str:

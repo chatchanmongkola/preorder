@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 
+import BackButton from "../components/BackButton";
 import { Card, CardDescription, CardTitle } from "../components/ui/card";
 import { useMyOrders } from "../hooks/useOrders";
 
@@ -8,7 +9,10 @@ export default function Orders() {
 
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col gap-4 p-6">
-      <h1 className="text-2xl font-bold text-primary">ออเดอร์ของฉัน</h1>
+      <div className="flex items-center gap-2">
+        <BackButton />
+        <h1 className="text-2xl font-bold text-primary">ออเดอร์ของฉัน</h1>
+      </div>
 
       {isLoading && <p className="text-neutral-500">กำลังโหลด...</p>}
       {orders?.length === 0 && <p className="text-neutral-500">ยังไม่มีออเดอร์</p>}

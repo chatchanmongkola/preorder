@@ -1,6 +1,14 @@
 import { apiClient, type ApiEnvelope } from "./client";
 import type { User } from "./types";
 
+export async function liffLogin(idToken: string): Promise<string> {
+  const res = await apiClient.post<ApiEnvelope<{ access_token: string }>>("/auth/liff/login", {
+    id_token: idToken,
+  });
+  if (!res.data.data) throw new Error(res.data.error ?? "LIFF login failed");
+  return res.data.data.access_token;
+}
+
 export async function devLogin(asAdmin = false): Promise<string> {
   const res = await apiClient.post<ApiEnvelope<{ access_token: string }>>("/auth/dev-login", {
     as_admin: asAdmin,

@@ -6,6 +6,10 @@ class LineCallbackRequest(BaseModel):
     redirect_uri: str | None = None
 
 
+class LiffLoginRequest(BaseModel):
+    id_token: str
+
+
 class DevLoginRequest(BaseModel):
     as_admin: bool = False
 

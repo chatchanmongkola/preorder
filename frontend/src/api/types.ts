@@ -33,7 +33,7 @@ export interface OrderItem {
 export interface Order {
   id: number;
   round_id: number;
-  status: "pending" | "confirmed" | "cancelled";
+  status: "pending" | "confirmed" | "completed" | "cancelled";
   note: string | null;
   total_amount: number;
   items: OrderItem[];

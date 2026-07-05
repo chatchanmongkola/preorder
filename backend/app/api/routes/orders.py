@@ -7,7 +7,7 @@ from app.db.session import get_db
 from app.models import MenuItem, Order, OrderItem, Round, RoundStatus, User
 from app.schemas.common import APIResponse
 from app.schemas.order import OrderCreate, OrderItemIn, OrderItemOut, OrderOut, OrderUpdate
-from app.services.round_service import get_effective_status
+from app.services.round_service import auto_complete_expired_rounds, get_effective_status
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 
@@ -112,6 +112,7 @@ def create_order(
 
 @router.get("/my", response_model=APIResponse[list[OrderOut]])
 def list_my_orders(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    auto_complete_expired_rounds(db)
     orders = (
         db.query(Order)
         .filter(Order.user_id == current_user.id)

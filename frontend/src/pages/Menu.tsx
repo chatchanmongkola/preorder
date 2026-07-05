@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 
+import BackButton from "../components/BackButton";
 import { Button } from "../components/ui/button";
 import { Card, CardTitle } from "../components/ui/card";
 import { useCart } from "../context/CartContext";
@@ -37,7 +38,10 @@ export default function Menu() {
 
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col gap-4 p-6 pb-28">
-      <h1 className="text-2xl font-bold text-primary">เมนู</h1>
+      <div className="flex items-center gap-2">
+        <BackButton />
+        <h1 className="text-2xl font-bold text-primary">เมนู</h1>
+      </div>
 
       {isLoading && <p className="text-neutral-500">กำลังโหลดเมนู...</p>}
 

@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from app.models import MenuItem, Order, OrderItem, OrderStatus, Round, RoundStatus
+from app.models import MenuItem, Order, OrderItem, OrderStatus, Round, RoundStatus, User
 from app.schemas.round import RoundSummaryItem, RoundSummaryOut
 
 
@@ -76,4 +76,23 @@ def build_round_summary(db: Session, round_: Round) -> RoundSummaryOut:
         total_amount=total_amount,
         items=items,
     )
+
+
+def auto_complete_expired_rounds(db: Session) -> None:
+    now = datetime.now(timezone.utc)
+    expired_rounds = db.query(Round).filter(
+        Round.closes_at < now,
+        Round.status != RoundStatus.CLOSED,
+    ).all()
+
+    for round_ in expired_rounds:
+        orders = db.query(Order).filter(
+            Order.round_id == round_.id,
+            Order.status.notin_([OrderStatus.CANCELLED, OrderStatus.COMPLETED]),
+        ).all()
+        for order in orders:
+            order.status = OrderStatus.COMPLETED
+
+    if expired_rounds:
+        db.commit()
 

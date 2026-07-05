@@ -1,5 +1,6 @@
 import { useParams } from "react-router-dom";
 
+import BackButton from "../components/BackButton";
 import { Card, CardDescription, CardTitle } from "../components/ui/card";
 import { useMyOrders } from "../hooks/useOrders";
 
@@ -14,7 +15,10 @@ export default function OrderDetail() {
 
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col gap-4 p-6">
-      <h1 className="text-2xl font-bold text-primary">ออเดอร์ #{order.id}</h1>
+      <div className="flex items-center gap-2">
+        <BackButton to="/" />
+        <h1 className="text-2xl font-bold text-primary">ออเดอร์ #{order.id}</h1>
+      </div>
       <Card>
         <CardTitle>สถานะ: {order.status}</CardTitle>
         {order.note && <CardDescription>หมายเหตุ: {order.note}</CardDescription>}

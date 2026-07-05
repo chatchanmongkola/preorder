@@ -6,7 +6,7 @@ from app.db.session import get_db
 from app.models import Round, RoundStatus
 from app.schemas.common import APIResponse
 from app.schemas.round import RoundOut, RoundSummaryOut
-from app.services.round_service import build_round_summary, get_effective_status
+from app.services.round_service import auto_complete_expired_rounds, build_round_summary, get_effective_status
 
 router = APIRouter(prefix="/rounds", tags=["rounds"])
 
@@ -22,6 +22,7 @@ def _to_round_out(round_: Round) -> RoundOut:
 
 
 def _find_current_round(db: Session) -> Round | None:
+    auto_complete_expired_rounds(db)
     for round_ in db.query(Round).order_by(Round.opens_at.desc()).all():
         if get_effective_status(round_) == RoundStatus.OPEN:
             return round_
