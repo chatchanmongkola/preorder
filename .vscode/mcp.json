@@ -1,0 +1,9 @@
+{
+  "servers": {
+    "preorder-app-tools": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["ts-node", "${workspaceFolder}/mcp-server/index.ts"]
+    }
+  }
+}
