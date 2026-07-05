@@ -8,8 +8,9 @@ import {
   type ReactNode,
 } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import liff from "@line/liff";
 
-import { getMe } from "../api/auth";
+import { getMe, liffLogin } from "../api/auth";
 import { TOKEN_STORAGE_KEY } from "../api/client";
 import type { User } from "../api/types";
 
@@ -28,6 +29,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.getItem(TOKEN_STORAGE_KEY)
   );
   const queryClient = useQueryClient();
+
+  // true while LIFF is initialising — keeps RequireAuth in a loading state so
+  // it does not redirect to /login before the LINE OAuth callback is processed.
+  const [liffIniting, setLiffIniting] = useState(
+    () => !!import.meta.env.VITE_LIFF_ID && !localStorage.getItem(TOKEN_STORAGE_KEY)
+  );
+
+  // Handle LIFF redirect-back: must run before any routing decision
+  useEffect(() => {
+    const liffId = import.meta.env.VITE_LIFF_ID as string | undefined;
+    if (!liffId || localStorage.getItem(TOKEN_STORAGE_KEY)) {
+      setLiffIniting(false);
+      return;
+    }
+
+    liff
+      .init({ liffId })
+      .then(() => {
+        if (!liff.isLoggedIn()) return;
+        const idToken = liff.getIDToken();
+        if (!idToken) return;
+        return liffLogin(idToken).then((newToken) => {
+          localStorage.setItem(TOKEN_STORAGE_KEY, newToken);
+          setTokenState(newToken);
+        });
+      })
+      .catch(() => {
+        // init failed or token exchange failed — let user retry on /login
+      })
+      .finally(() => setLiffIniting(false));
+  }, []); // intentionally run once on mount
 
   const { data: user, isLoading } = useQuery({
     queryKey: ["auth", "me", token],
@@ -59,12 +91,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AuthContextValue>(
     () => ({
       user: user ?? null,
-      isLoading: !!token && isLoading,
+      isLoading: liffIniting || (!!token && isLoading),
       isAuthenticated: !!token && !!user,
       setToken,
       logout,
     }),
-    [user, isLoading, token, setToken, logout]
+    [user, isLoading, token, liffIniting, setToken, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

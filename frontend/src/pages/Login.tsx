@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import liff from "@line/liff";
 import { useNavigate } from "react-router-dom";
 
-import { devLogin, liffLogin } from "../api/auth";
+import { devLogin } from "../api/auth";
 import { Button } from "../components/ui/button";
 import { Card, CardDescription, CardTitle } from "../components/ui/card";
 import { useAuth } from "../context/AuthContext";
@@ -11,7 +11,6 @@ export default function Login() {
   const { setToken, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [liffReady, setLiffReady] = useState(false);
-  const [liffLoggedIn, setLiffLoggedIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -20,37 +19,19 @@ export default function Login() {
       return;
     }
 
-    const liffId = import.meta.env.VITE_LIFF_ID;
+    const liffId = import.meta.env.VITE_LIFF_ID as string | undefined;
     if (!liffId) {
       setLiffReady(false);
       return;
     }
 
+    // AuthContext already initialised LIFF on mount; this call is idempotent.
+    // We only need liff ready so the login button can call liff.login().
     liff
       .init({ liffId })
-      .then(() => {
-        setLiffReady(true);
-        const loggedIn = liff.isLoggedIn();
-        setLiffLoggedIn(loggedIn);
-        
-        if (loggedIn) {
-          const idToken = liff.getIDToken();
-          if (idToken) {
-            liffLogin(idToken)
-              .then((token) => {
-                setToken(token);
-                navigate("/orders", { replace: true });
-              })
-              .catch((err) => setError(err instanceof Error ? err.message : "LIFF login failed"));
-          } else {
-            setError("ไม่สามารถรับ idToken จาก LINE ได้");
-          }
-        }
-      })
-      .catch(() => {
-        setLiffReady(false);
-      });
-  }, [isAuthenticated, navigate, setToken]);
+      .then(() => setLiffReady(true))
+      .catch(() => setLiffReady(false));
+  }, [isAuthenticated, navigate]);
 
   const handleLiffLogin = () => {
     liff.login();
@@ -72,14 +53,12 @@ export default function Login() {
 
         {error && <p className="mt-4 text-sm text-red-500">{error}</p>}
 
-        {liffReady && !liffLoggedIn && (
+
+
+        {liffReady && (
           <Button className="mt-6 w-full" onClick={handleLiffLogin}>
             เข้าสู่ระบบด้วย LINE
           </Button>
-        )}
-
-        {liffReady && liffLoggedIn && (
-          <p className="mt-6 text-sm text-neutral-500">กำลังเข้าสู่ระบบด้วย LINE...</p>
         )}
 
         {!liffReady && import.meta.env.DEV && (
