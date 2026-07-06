@@ -13,13 +13,13 @@ def thai_date_str(d: date | datetime) -> str:
     if isinstance(d, datetime):
         d = d.astimezone(BANGKOK_TZ).date()
     be_year = d.year + 543
-    return f"{d.day:02d}-{THAI_MONTHS[d.month - 1]}-{be_year}"
+    return f"{d.day:02d} {THAI_MONTHS[d.month - 1]} {be_year}"
 
 
 def thai_datetime_str(dt: datetime) -> str:
     bk = dt.astimezone(BANGKOK_TZ)
     be_year = bk.year + 543
-    return f"{bk.day:02d}-{THAI_MONTHS[bk.month - 1]}-{be_year} {bk.hour:02d}:{bk.minute:02d}"
+    return f"{bk.day:02d} {THAI_MONTHS[bk.month - 1]} {be_year} {bk.hour:02d}:{bk.minute:02d}"
 
 
 def bangkok_today() -> date:

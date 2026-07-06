@@ -120,7 +120,7 @@ def _find_latest_active_round(db: Session) -> Round | None:
     return None
 
 
-async def _cmd_close(db: Session) -> str:
+async def _cmd_close(db: Session, chat_id: str | None = None) -> str:
     auto_complete_expired_rounds(db)
     round_ = _find_latest_active_round(db)
     if round_ is None:
@@ -136,8 +136,20 @@ async def _cmd_close(db: Session) -> str:
         return "เกิดข้อผิดพลาดในการปิดรอบ กรุณาลองใหม่อีกครั้ง"
     db.refresh(round_)
 
+    orders = (
+        db.query(Order)
+        .filter(Order.round_id == round_.id, Order.status != OrderStatus.CANCELLED)
+        .all()
+    )
+
+    for order in orders:
+        text = telegram_service.format_individual_order(order, round_.name)
+        keyboard = telegram_service._confirm_keyboard(order.id)
+        await telegram_service.send_message_with_keyboard(text, keyboard, chat_id=chat_id)
+
     summary = build_round_summary(db, round_)
-    await telegram_service.send_message(telegram_service.format_round_summary(summary))
+    await telegram_service.send_message(telegram_service.format_round_summary(summary), chat_id=chat_id)
+
     return f"ปิดรอบ {round_.name} แล้ว และส่งสรุปยอดเรียบร้อย"
 
 
@@ -196,7 +208,38 @@ def _cmd_listorders(db: Session) -> str:
     return "\n".join(lines)
 
 
-async def handle_command(db: Session, text: str) -> str:
+async def handle_callback_data(db: Session, data: str, chat_id: str, message_id: int) -> None:
+    if data.startswith("confirm_order:"):
+        await _handle_confirm_order(db, data, chat_id, message_id)
+
+
+async def _handle_confirm_order(db: Session, data: str, chat_id: str, message_id: int) -> None:
+    try:
+        order_id = int(data.split(":")[1])
+    except (IndexError, ValueError):
+        logger.warning("Invalid confirm_order callback data: %s", data)
+        return
+
+    order = db.query(Order).filter(Order.id == order_id).first()
+    if order is None:
+        logger.warning("Order %s not found for confirm callback", order_id)
+        return
+
+    order.status = OrderStatus.CONFIRMED
+    try:
+        db.commit()
+        logger.info("Confirmed order: %s (id=%s)", order.user.display_name, order.id)
+    except Exception as exc:
+        db.rollback()
+        logger.error("Failed to confirm order %s: %s", order_id, exc)
+        return
+
+    db.refresh(order)
+    updated_text = telegram_service.format_individual_order(order, order.round.name, confirmed=True)
+    await telegram_service.edit_message_text(updated_text, chat_id, message_id)
+
+
+async def handle_command(db: Session, text: str, chat_id: str | None = None) -> str:
     parts = text.strip().split()
     if not parts:
         return "คำสั่งไม่ถูกต้อง"
@@ -208,7 +251,7 @@ async def handle_command(db: Session, text: str) -> str:
     if command == "/open":
         return _cmd_open(db, args)
     if command == "/close":
-        return await _cmd_close(db)
+        return await _cmd_close(db, chat_id=chat_id)
     if command == "/summary":
         return _cmd_summary(db)
     if command == "/addmenu":

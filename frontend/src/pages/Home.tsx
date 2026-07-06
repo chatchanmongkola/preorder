@@ -36,7 +36,7 @@ export default function Home() {
 
       {round && (
         <Card>
-          <CardTitle>{formatThaiDate(round.closes_at)}</CardTitle>
+          <CardTitle>{round.name}</CardTitle>
           <CardDescription>ปิดรับออเดอร์: {formatThaiDatetime(round.closes_at)}</CardDescription>
           <Link to={`/menu?round_id=${round.id}`}>
             <Button className="mt-4 w-full" size="lg">
