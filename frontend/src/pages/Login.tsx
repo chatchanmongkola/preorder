@@ -14,7 +14,7 @@ export default function Login() {
 
     useEffect(() => {
         if (isAuthenticated) {
-            navigate("/", { replace: true });
+            navigate("/orders", { replace: true });
             return;
         }
 
@@ -38,7 +38,7 @@ export default function Login() {
     const handleDevLogin = async (asAdmin: boolean) => {
         const token = await devLogin(asAdmin);
         setToken(token);
-        navigate("/");
+        navigate("/orders");
     };
 
     if (isAuthenticated) return null;

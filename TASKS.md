@@ -58,7 +58,7 @@ Check items off as completed; recheck before moving to the next phase.
 ## Phase 7 — Testing, Review & Task Tracking
 - [x] Create this `TASKS.md` (first implementation step)
 - [x] Backend tests: `test_auth.py` (10 tests), `test_rounds.py` (9 tests) — `test_orders.py` (5) and `test_telegram.py` (7) done in earlier phases. **31/31 passing.**
-- [x] Frontend tests: `CartContext.test.tsx` (7 tests — incl. regression test for the setQuantity add-new-line bug), `client.test.ts` (4 tests for API error-message resolution). **11/11 passing.**
+- [x] Frontend tests: `CartContext.test.tsx` (7 tests — incl. regression test for the setQuantity add-new-line bug), `client.test.ts` (4 tests for API error-message resolution), `AuthContext.test.tsx` (3 tests covering LIFF callback/token bootstrap path). **14/14 passing.**
 - [x] Ran `.github/prompts/review-agent.prompt.md` checklist: no hardcoded secrets (all via env/settings), ORM-only (no raw SQL), JWT validated on all protected routes, LINE token verified via LINE `/verify` API, Telegram webhook validates secret token, round status + duplicate-order + server-side total all enforced server-side, no `any` in frontend, no `console.log` in frontend code, only `print()` found in `backend/app/seed.py` (a one-off dev script, not request-path code) — acceptable.
 
 ## Bugs found & fixed during Phase 7 testing
@@ -67,7 +67,7 @@ Check items off as completed; recheck before moving to the next phase.
 - **`CartContext.setQuantity` could never add a new line.** It only accepted a menu item ID and used `.map()`, which is a no-op for IDs not already in `lines`. It happened to work before because call sites only ever called it on items already in the cart, but this silently broke the new cart-hydration-from-existing-order feature. Fixed by changing the signature to accept the full `MenuItem` (matching `addItem`) so it can both add and update; covered by a regression test in `CartContext.test.tsx`.
 
 ## Phase 8 — Migrate to Vercel Prod
-- [ ] `vercel.json` for frontend + backend ASGI serverless entry
+- [x] `vercel.json` for frontend + backend ASGI serverless entry
 - [ ] Point `DATABASE_URL` to Supabase; run migrations there
 - [ ] Set real LINE/Telegram/JWT env vars in Vercel; confirm `ENVIRONMENT=production` disables dev-login
 - [ ] Update LINE redirect URI + Telegram webhook URL to prod domain
