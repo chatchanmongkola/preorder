@@ -4,6 +4,7 @@ import { Button } from "../components/ui/button";
 import { Card, CardDescription, CardTitle } from "../components/ui/card";
 import { useAuth } from "../context/AuthContext";
 import { useCurrentRound } from "../hooks/useRounds";
+import { formatThaiDate, formatThaiDatetime } from "../lib/format";
 
 export default function Home() {
   const { user } = useAuth();
@@ -35,8 +36,8 @@ export default function Home() {
 
       {round && (
         <Card>
-          <CardTitle>{round.name}</CardTitle>
-          <CardDescription>ปิดรับออเดอร์: {new Date(round.closes_at).toLocaleString("th-TH")}</CardDescription>
+          <CardTitle>{formatThaiDate(round.closes_at)}</CardTitle>
+          <CardDescription>ปิดรับออเดอร์: {formatThaiDatetime(round.closes_at)}</CardDescription>
           <Link to={`/menu?round_id=${round.id}`}>
             <Button className="mt-4 w-full" size="lg">
               สั่งของรอบนี้

@@ -3,13 +3,21 @@
 command logic can be unit-tested without going through HTTP.
 """
 import logging
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 
 from sqlalchemy.orm import Session
 
 from app.models import MenuItem, Order, OrderStatus, Round, RoundStatus
 from app.services import telegram_service
 from app.services.round_service import auto_complete_expired_rounds, build_round_summary, get_effective_status
+from app.utils.thai_date import (
+    bangkok_closes_at_utc,
+    bangkok_today,
+    parse_as_bangkok,
+    thai_date_str,
+    thai_datetime_str,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -25,15 +33,24 @@ def _cmd_status(db: Session) -> str:
 
 
 def _today_round(db: Session) -> Round | None:
-    """Find an open round whose opens_at falls on today's date (UTC)."""
-    today_start = datetime.combine(date.today(), datetime.min.time()).replace(tzinfo=timezone.utc)
-    today_end = datetime.combine(date.today(), datetime.max.time()).replace(tzinfo=timezone.utc)
-    return (
-        db.query(Round)
-        .filter(Round.opens_at >= today_start, Round.opens_at <= today_end, Round.status != RoundStatus.CLOSED)
-        .order_by(Round.opens_at.desc())
-        .first()
-    )
+    """Find an open round whose opens_at falls on today's date (Bangkok timezone).
+
+    Checks the *effective* status via ``get_effective_status`` rather than the
+    stored ``status`` column so that a round whose ``closes_at`` has already
+    passed (DB status still OPEN, but time-wise already closed) is *not*
+    returned as today's round.
+    """
+    today = bangkok_today()
+    today_start_bkk = datetime.combine(today, datetime.min.time(), tzinfo=ZoneInfo("Asia/Bangkok"))
+    today_end_bkk = datetime.combine(today, datetime.max.time(), tzinfo=ZoneInfo("Asia/Bangkok"))
+    today_start_utc = today_start_bkk.astimezone(timezone.utc)
+    today_end_utc = today_end_bkk.astimezone(timezone.utc)
+    for r in db.query(Round).filter(
+        Round.opens_at >= today_start_utc, Round.opens_at <= today_end_utc,
+    ).order_by(Round.opens_at.desc()).all():
+        if get_effective_status(r) == RoundStatus.OPEN:
+            return r
+    return None
 
 
 def _cmd_open(db: Session, args: list[str]) -> str:
@@ -48,8 +65,9 @@ def _cmd_open(db: Session, args: list[str]) -> str:
             )
 
         now = datetime.now(timezone.utc)
-        today_name = date.today().isoformat()
-        closes_at = datetime.combine(date.today(), datetime.max.time()).replace(tzinfo=timezone.utc)
+        today = bangkok_today()
+        today_name = thai_date_str(today)
+        closes_at = bangkok_closes_at_utc(today)
         round_ = Round(
             name=today_name,
             opens_at=now,
@@ -64,7 +82,7 @@ def _cmd_open(db: Session, args: list[str]) -> str:
             db.rollback()
             logger.error("Failed to create today round: %s", exc)
             return "เกิดข้อผิดพลาดในการสร้างรอบ กรุณาลองใหม่อีกครั้ง"
-        return f"เปิดรอบใหม่ {today_name} แล้ว (ปิดรับ 23:59 วันนี้)"
+        return f"เปิดรอบใหม่ {today_name} แล้ว (ปิดรับ {thai_datetime_str(closes_at)})"
 
     if len(args) < 2:
         return "รูปแบบคำสั่งไม่ถูกต้อง: /open [ชื่อรอบ] [YYYY-MM-DD HH:MM]"
@@ -72,7 +90,8 @@ def _cmd_open(db: Session, args: list[str]) -> str:
     name = args[0]
     date_str = " ".join(args[1:])
     try:
-        closes_at = datetime.strptime(date_str, "%Y-%m-%d %H:%M").replace(tzinfo=timezone.utc)
+        closes_at_bkk = parse_as_bangkok(date_str)
+        closes_at = closes_at_bkk.astimezone(timezone.utc)
     except ValueError:
         return "รูปแบบวันที่ไม่ถูกต้อง ใช้ YYYY-MM-DD HH:MM"
 
@@ -90,7 +109,7 @@ def _cmd_open(db: Session, args: list[str]) -> str:
         db.rollback()
         logger.error("Failed to create round: %s", exc)
         return "เกิดข้อผิดพลาดในการสร้างรอบ กรุณาลองใหม่อีกครั้ง"
-    return f"เปิดรอบใหม่แล้ว: {name} (ปิดรับ {closes_at:%Y-%m-%d %H:%M})"
+    return f"เปิดรอบใหม่แล้ว: {name} (ปิดรับ {thai_datetime_str(closes_at)})"
 
 
 def _find_latest_active_round(db: Session) -> Round | None:

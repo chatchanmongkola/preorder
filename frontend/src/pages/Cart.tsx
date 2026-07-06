@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import BackButton from "../components/BackButton";
@@ -17,6 +17,7 @@ export default function Cart() {
   const createOrder = useCreateOrder();
   const updateOrder = useUpdateOrder();
   const { data: myOrders } = useMyOrders();
+  const noteInited = useRef(false);
 
   // Users can only order once per round, but may edit the order until the round
   // closes. If one already exists for this round, submit should update it instead
@@ -24,13 +25,25 @@ export default function Cart() {
   const existingOrder = myOrders?.find(
     (o) => o.round_id === roundId && o.status !== "cancelled"
   );
+
+  // Pre-fill note from existing order when editing (one-time per roundId).
+  useEffect(() => {
+    noteInited.current = false;
+  }, [roundId]);
+
+  useEffect(() => {
+    if (!existingOrder || noteInited.current) return;
+    setNote(existingOrder.note ?? "");
+    noteInited.current = true;
+  }, [existingOrder]);
+
   const submitMutation = existingOrder ? updateOrder : createOrder;
 
   const handleConfirm = async () => {
     const items = lines.map((l) => ({ menu_item_id: l.item.id, quantity: l.quantity }));
     const order = existingOrder
-      ? await updateOrder.mutateAsync({ orderId: existingOrder.id, items, note: note || undefined })
-      : await createOrder.mutateAsync({ roundId, items, note: note || undefined });
+      ? await updateOrder.mutateAsync({ orderId: existingOrder.id, items, note })
+      : await createOrder.mutateAsync({ roundId, items, note });
     clear();
     navigate(`/order/${order.id}`);
   };
