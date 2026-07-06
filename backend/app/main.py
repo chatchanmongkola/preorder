@@ -11,11 +11,21 @@ from app.core.config import get_settings
 
 settings = get_settings()
 
+# In production the FRONTEND_URL env var is set on Vercel;
+# localhost fallback so CORS works in local Docker too.
+_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://localhost:4173",
+    "https://preorder-frontend-pi.vercel.app",
+]
+if settings.FRONTEND_URL and settings.FRONTEND_URL not in _ALLOWED_ORIGINS:
+    _ALLOWED_ORIGINS.append(settings.FRONTEND_URL)
+
 app = FastAPI(title="Preorder API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.FRONTEND_URL],
+    allow_origins=_ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
