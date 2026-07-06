@@ -3,5 +3,10 @@
     "installCommand": "npm install",
     "buildCommand": "npm run build",
     "outputDirectory": "dist",
-    "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+    "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
+    "github": {
+        "silent": true,
+        "autoJobCancelation": true,
+        "ignoredBuildStep": "git diff --quiet HEAD~1 HEAD -- ./frontend/ || exit 1"
+    }
 }
